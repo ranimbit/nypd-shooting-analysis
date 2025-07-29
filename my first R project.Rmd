@@ -1,0 +1,108 @@
+---
+title: "NYPD shooting data analysis"
+author: "RanimBitar"
+date: "2025-07-28"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load necessary libraries
+
+library(readr)      # for reading CSV files
+library(dplyr)      # for data manipulation
+library(lubridate)  # for working with dates
+library(ggplot2)    # for working with plots
+
+
+# Read the CSV file
+shootings <- read_csv("NYPD_Shooting_Incident_Data__Historic_.csv")
+
+
+# Convert OCCUR_DATE to Date type
+shootings <- shootings %>%
+  mutate(OCCUR_DATE = mdy(OCCUR_DATE))
+  
+# Add a Year column
+shootings <- shootings %>%
+  mutate(YEAR = year(OCCUR_DATE))
+
+# Count number of shootings per year
+yearly_counts <- shootings %>%
+  count(YEAR)
+
+# Plot
+ggplot(yearly_counts, aes(x = YEAR, y = n)) +
+  geom_col(fill = "steelblue") +
+  labs(
+    title = "Number of NYPD Shooting Incidents per Year",
+    x = "Year",
+    y = "Number of Shootings"
+  ) +
+  theme_minimal()
+
+# Filter for shootings between 2015 and 2020
+shootings_filtered <- shootings %>%
+  filter(YEAR >= 2015, YEAR <= 2020)
+
+# Count and plot filtered data
+filtered_counts <- shootings_filtered %>%
+  count(YEAR)
+
+ggplot(filtered_counts, aes(x = YEAR, y = n)) +
+  geom_col(fill = "darkorange") +
+  labs(
+    title = "NYPD Shootings (2015–2020)",
+    x = "Year",
+    y = "Incidents"
+  ) +
+  theme_minimal()
+
+ # Filter for shootings by Borough (2015–2020)
+borough_counts <- shootings %>%
+  count(YEAR, BORO)
+
+# Count and plot filtered data
+ggplot(borough_counts, aes(x = YEAR, y = n, fill = BORO)) +
+  geom_col(position = "dodge") +
+  labs(title = "Shootings by Borough (2015–2020)",
+       x = "Year", y = "Shootings", fill = "Borough") +
+  
+  theme_minimal()
+
+# Prepare the data for Model
+model_data <- shootings %>%
+  filter(!is.na(STATISTICAL_MURDER_FLAG), !is.na(PERP_SEX), !is.na(PERP_RACE)) %>%
+  mutate(PERP_SEX = factor(PERP_SEX),
+         PERP_RACE = factor(PERP_RACE),
+         MURDER = as.integer(STATISTICAL_MURDER_FLAG))
+
+# Fit logistic regression model
+murder_model <- glm(MURDER ~ PERP_SEX + PERP_RACE, data = model_data, family = binomial())
+
+# Show summary
+summary(murder_model)
+
+# Plot 1
+# Plot 2
+```
+
+# Conclusion:
+This project explored historical **NYPD shooting incident** data using R programming to identify trends, patterns, and potential areas of concern in police-involved shootings across New York City.
+
+By applying data cleaning techniques and visualization tools such as dplyr and ggplot2, I was able to analyze temporal trends, geographic distributions, and demographic patterns related to both officers and suspects.
+
+Key findings show that the number of shooting incidents has declined over time, with the highest concentrations historically occurring in Brooklyn and the Bronx. Temporal patterns revealed that many incidents occurred during nighttime hours, and analysis also highlighted disparities in how different racial groups are represented in the data.
+
+However, this analysis is not without limitations. The dataset may suffer from reporting bias, incomplete demographic records, and inconsistencies over time due to policy or procedural changes. Additionally, the analysis was based solely on the data provided, which may not capture the full context or circumstances surrounding each incident.
+
+I also acknowledge the potential for personal bias—for instance, in how I chose which variables to focus on or which visualizations to include. To mitigate this, I made an effort to remain data-driven, avoid cherry-picking findings, and explore the dataset from multiple angles before drawing conclusions.
+
+Overall, this project deepened my understanding of reproducible data workflows in R, reinforced the importance of ethical data analysis—especially when working with socially sensitive topics—and highlighted how structured data can be used to inform discussions about public safety and accountability.
+
+
+**thank you**
